@@ -1,0 +1,10 @@
+extends:
+  - 'plugin:prettier/recommended'
+parser: '@typescript-eslint/parser'
+plugins:
+  - '@typescript-eslint'
+  - 'prettier'
+env:
+  node: true
+parserOptions:
+  ecmaVersion: 2019
