@@ -12,17 +12,20 @@ async function main() {
     .version(version);
 
   program
-    .command('init')
-    .description('Splits a branch into many local branches.')
+    .command('mirror')
+    .description('Reflects a local primary branch into mirrored local, segmented branches.')
     .action(options => {
-      log('init', options);
-    });
+      log('mirror', options);
 
-  program
-    .command('update')
-    .description('Updates many branches to reflect latest primary trunk changes.')
-    .action(options => {
-      log('update', options);
+      // Check to make sure tree is clean (no pending changes).
+      // Read the boundaries from preferences (ENV?).
+      // Gather the set of changed files from master ancestor.
+      // Determine the set of branches to create and their associated files.
+      // Determine the commit message to use (first distinct commit).
+      // For each branch...
+      //    - Checkout a clean new branch from master ancestor. (throw if already existing)
+      //    - Add the set of files for that branch.
+      //    - Create a commit based on the message from before.
     });
 
   program
