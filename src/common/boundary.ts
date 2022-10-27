@@ -2,6 +2,7 @@ interface BoundarySet {
   boundary: string;
   changedFiles: string[];
 }
+
 function determineBoundary(boundaryRules: string[], changedFile: string): BoundarySet | undefined {
   const fileParts = changedFile.split('/').filter(Boolean);
 
@@ -23,6 +24,7 @@ function determineBoundary(boundaryRules: string[], changedFile: string): Bounda
       return {boundary: match.join('/'), changedFiles: [changedFile]};
   }
 }
+
 export function determineBoundaries(
   boundaryRules: string[],
   changedFiles: string[],

@@ -21,42 +21,42 @@ async function main() {
       log('executing mirror with options', options);
 
       // Check to make sure tree is clean (no pending changes).
-      git.assertCleanWorkingTree();
+      const context = await git.getRepoContext();
+      git.assertCleanWorkingTree({context});
 
       // Read the boundary rules from preferences.
       const {boundaryRules} = await readPreferences();
 
       // Gather the set of changed files from master ancestor.
-      const commonAncestor = git.readCommonAncestor();
-      const changedFiles = git.readChangedFilesSince(commonAncestor);
+      const commonAncestor = git.readCommonAncestor({context});
+      const changedFiles = git.readChangedFilesSince(commonAncestor, {context});
 
       // Determine the set of branches to create and their associated files.
       const changesets = determineBoundaries(boundaryRules, changedFiles);
       // Determine the branch name and commit message to use (first distinct commit).
-      const currentBranch = git.readCurrentBranch();
-      const message = git.readFirstUniqueCommitMessage();
+      const message = git.readFirstUniqueCommitMessage({context});
 
-      log({commonAncestor, changedFiles, changesets, currentBranch, message});
+      log({commonAncestor, changedFiles, changesets, context, message});
 
       // For each changeset...
       for (const changeset of changesets) {
         // Checkout a clean new branch from master ancestor.
         const cleanedBoundary = changeset.boundary.replace(/[^a-z0-9]+/g, '_');
-        const branchName = `${currentBranch}.erised.${cleanedBoundary}`;
+        const branchName = `${context.currentBranch}.erised.${cleanedBoundary}`;
         log('checking out current branch');
-        git.exec(['checkout', '-f', currentBranch]);
+        git.exec(['checkout', '-f', context.currentBranch], {context});
         log('checking out branch name', branchName);
-        git.exec(['branch', '-D', branchName], {fatal: false});
-        git.exec(['checkout', '-b', branchName]);
+        git.exec(['branch', '-D', branchName], {fatal: false, context});
+        git.exec(['checkout', '-b', branchName], {context});
 
         // Add the set of files just for that branch.
         log('checking out branch name', branchName);
-        git.exec(['reset', git.readMainBranchName()]);
-        git.exec(['add', ...changeset.changedFiles]);
+        git.exec(['reset', context.mainBranchName], {context});
+        git.exec(['add', ...changeset.changedFiles], {context});
 
         // Create a commit based on the message from before.
         log(`committing ${changeset.changedFiles.length} changes`);
-        git.exec(['commit', '--no-verify', '-m', message]);
+        git.exec(['commit', '--no-verify', '-m', message], {context});
       }
     });
 
