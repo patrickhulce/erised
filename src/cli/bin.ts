@@ -1,6 +1,9 @@
 import {Command} from 'commander';
 import {version} from '../../package.json';
 import createLogger from 'debug';
+import * as git from '../common/git';
+import {readPreferences} from '../common/preferences';
+import {determineBoundaries} from '../common/boundary';
 
 const log = createLogger('erised:cli:run');
 
@@ -14,18 +17,47 @@ async function main() {
   program
     .command('mirror')
     .description('Reflects a local primary branch into mirrored local, segmented branches.')
-    .action(options => {
-      log('mirror', options);
+    .action(async options => {
+      log('executing mirror with options', options);
 
       // Check to make sure tree is clean (no pending changes).
-      // Read the boundaries from preferences (ENV?).
+      git.assertCleanWorkingTree();
+
+      // Read the boundary rules from preferences.
+      const {boundaryRules} = await readPreferences();
+
       // Gather the set of changed files from master ancestor.
+      const commonAncestor = git.readCommonAncestor();
+      const changedFiles = git.readChangedFilesSince(commonAncestor);
+
       // Determine the set of branches to create and their associated files.
-      // Determine the commit message to use (first distinct commit).
-      // For each branch...
-      //    - Checkout a clean new branch from master ancestor. (throw if already existing)
-      //    - Add the set of files for that branch.
-      //    - Create a commit based on the message from before.
+      const changesets = determineBoundaries(boundaryRules, changedFiles);
+      // Determine the branch name and commit message to use (first distinct commit).
+      const currentBranch = git.readCurrentBranch();
+      const message = git.readFirstUniqueCommitMessage();
+
+      log({commonAncestor, changedFiles, changesets, currentBranch, message});
+
+      // For each changeset...
+      for (const changeset of changesets) {
+        // Checkout a clean new branch from master ancestor.
+        const cleanedBoundary = changeset.boundary.replace(/[^a-z0-9]+/g, '_');
+        const branchName = `${currentBranch}.erised.${cleanedBoundary}`;
+        log('checking out current branch');
+        git.exec(['checkout', '-f', currentBranch]);
+        log('checking out branch name', branchName);
+        git.exec(['branch', '-D', branchName], {fatal: false});
+        git.exec(['checkout', '-b', branchName]);
+
+        // Add the set of files just for that branch.
+        log('checking out branch name', branchName);
+        git.exec(['reset', git.readMainBranchName()]);
+        git.exec(['add', ...changeset.changedFiles]);
+
+        // Create a commit based on the message from before.
+        log(`committing ${changeset.changedFiles.length} changes`);
+        git.exec(['commit', '--no-verify', '-m', message]);
+      }
     });
 
   program
@@ -56,9 +88,9 @@ async function main() {
       log('cleanup', options);
     });
 
-  const parsed = await program.parseAsync(process.argv);
+  await program.parseAsync(process.argv);
 
-  log(parsed);
+  process.stdout.write(`Done!\n`);
 }
 
 main().catch(err => {
