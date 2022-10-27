@@ -9,7 +9,8 @@
     "start": "node ./dist/src/cli/bin.js",
     "build": "tsc",
     "build:watch": "tsc -w",
-    "test": "eslint 'src/**/*.ts' && jest"
+    "test": "eslint 'src/**/*.ts' && jest",
+    "test:watch": "jest --watch"
   },
   "keywords": [
     "erised",
@@ -20,6 +21,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/debug": "^4.1.7",
+    "@types/jest": "^29.2.0",
     "@typescript-eslint/eslint-plugin": "^5.39.0",
     "@typescript-eslint/parser": "^5.39.0",
     "eslint": "^8.24.0",

@@ -19,7 +19,7 @@ function determineBoundary(boundaryRules: string[], changedFile: string): Bounda
       else if (ruleParts[i] === '*') match.push(fileParts[i]);
     }
 
-    if (match.length === fileParts.length)
+    if (match.length === ruleParts.length)
       return {boundary: match.join('/'), changedFiles: [changedFile]};
   }
 }
@@ -39,5 +39,5 @@ export function determineBoundaries(
     });
   }
 
-  return Array.from(boundariesByName.values());
+  return Array.from(boundariesByName.values()).sort((a, b) => a.boundary.localeCompare(b.boundary));
 }
