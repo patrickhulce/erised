@@ -1,10 +1,6 @@
 module.exports = {
+  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/dist/'],
   transform: {
-    '^.+\\.tsx?$': '<rootDir>/node_modules/ts-jest',
-  },
-  globals: {
-    'ts-jest': {
-      diagnostics: false,
-    },
+    '^.+\\.tsx?$': ['<rootDir>/node_modules/ts-jest', {diagnostics: false}],
   },
 };

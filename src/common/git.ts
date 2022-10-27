@@ -17,6 +17,7 @@ function _exec(args: string[], options?: {fatal?: boolean; gitWorkTree?: string}
     cwd: gitWorkTree,
     env: {...process.env, GIT_WORK_TREE: gitWorkTree, GIT_DIR: path.join(gitWorkTree, '.git')},
   });
+
   if (fatal && result.status !== 0) {
     const errorOutput = result.stderr.toString().slice(0, 1000);
     const stdOutput = result.stdout.toString().slice(0, 1000);

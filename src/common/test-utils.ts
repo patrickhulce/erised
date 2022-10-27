@@ -40,12 +40,15 @@ export async function setupTestRepository(options: typeof DEFAULT_OPTIONS): Prom
     mainBranchName: options.mainBranchName,
   };
 
+  // Setup the repo with initial files.
   git.exec(['init'], {context});
   git.exec(['add', '-A'], {context});
   git.exec(['commit', '-m', 'feat: initial commit'], {context});
   git.exec(['branch', '-m', context.mainBranchName], {context});
   console.log(git.exec(['status'], {context}));
 
+  // Create a branch and add some commits to it.
+  git.exec(['checkout', '-b', context.currentBranch], {context});
   for (let i = 0; i < options.commits.length; i++) {
     const commit = options.commits[i];
 
@@ -63,5 +66,5 @@ export async function setupTestRepository(options: typeof DEFAULT_OPTIONS): Prom
 }
 
 export async function teardownTestRepository(state: TestState): Promise<void> {
-  await fs.rm(state.tmpDirectory, {recursive: true, force: true});
+  // await fs.rm(state.tmpDirectory, {recursive: true, force: true});
 }

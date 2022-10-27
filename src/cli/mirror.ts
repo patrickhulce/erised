@@ -44,4 +44,7 @@ export async function executeMirror(options: {context: git.RepoContext}) {
     log(`committing ${changeset.changedFiles.length} changes`);
     git.exec(['commit', '--no-verify', '-m', message], {context});
   }
+
+  // Return to starting branch.
+  git.exec(['checkout', '-f', context.currentBranch], {context});
 }
