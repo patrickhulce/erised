@@ -1,5 +1,6 @@
 import {spawnSync} from 'node:child_process';
 import {createLogger} from './utils';
+import * as path from 'path';
 
 const log = createLogger('erised:common:git');
 
@@ -9,10 +10,13 @@ export interface RepoContext {
   mainBranchName: string;
 }
 
-function _exec(args: string[], options?: {fatal?: boolean; cwd?: string}) {
-  const {fatal = true, cwd = process.cwd()} = options ?? {};
+function _exec(args: string[], options?: {fatal?: boolean; gitWorkTree?: string}) {
+  const {fatal = true, gitWorkTree = process.cwd()} = options ?? {};
 
-  const result = spawnSync('git', args, {cwd});
+  const result = spawnSync('git', args, {
+    cwd: gitWorkTree,
+    env: {...process.env, GIT_WORK_TREE: gitWorkTree, GIT_DIR: path.join(gitWorkTree, '.git')},
+  });
   if (fatal && result.status !== 0) {
     const errorOutput = result.stderr.toString().slice(0, 1000);
     const stdOutput = result.stdout.toString().slice(0, 1000);
@@ -27,7 +31,7 @@ function _exec(args: string[], options?: {fatal?: boolean; cwd?: string}) {
 }
 
 export function exec(args: string[], options: {context: RepoContext; fatal?: boolean}) {
-  return _exec(args, {...options, cwd: options.context.gitRootDirectory});
+  return _exec(args, {...options, gitWorkTree: options.context.gitRootDirectory});
 }
 
 export async function getRepoContext(): Promise<RepoContext> {
@@ -35,9 +39,7 @@ export async function getRepoContext(): Promise<RepoContext> {
     gitRootDirectory: _exec(['rev-parse', '--show-toplevel']).stdout,
     currentBranch: _exec(['rev-parse', '--abbrev-ref', 'HEAD']).stdout,
     mainBranchName:
-      _exec(['rev-parse', '--verify', 'origin/main'], {fatal: false}).code === 0
-        ? 'main'
-        : 'master',
+      _exec(['rev-parse', '--verify', 'main'], {fatal: false}).code === 0 ? 'main' : 'master',
   };
 }
 
