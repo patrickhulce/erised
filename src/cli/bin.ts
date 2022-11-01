@@ -38,13 +38,6 @@ async function main() {
     });
 
   program
-    .command('merge')
-    .description('Merges any PRs with approvals.')
-    .action(options => {
-      log('status', options);
-    });
-
-  program
     .command('cleanup')
     .description('Deletes any local branches that have been completed.')
     .action(options => {
