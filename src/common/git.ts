@@ -8,6 +8,7 @@ export interface RepoContext {
   gitRootDirectory: string;
   currentBranch: string;
   mainBranchName: string;
+  globalCommitCount: number;
 }
 
 function _exec(args: string[], options?: {fatal?: boolean; gitWorkTree?: string}) {
@@ -32,11 +33,13 @@ function _exec(args: string[], options?: {fatal?: boolean; gitWorkTree?: string}
 }
 
 export function exec(args: string[], options: {context: RepoContext; fatal?: boolean}) {
+  if (args[0] === 'commit') options.context.globalCommitCount++;
   return _exec(args, {...options, gitWorkTree: options.context.gitRootDirectory});
 }
 
 export async function getRepoContext(): Promise<RepoContext> {
   return {
+    globalCommitCount: 0,
     gitRootDirectory: _exec(['rev-parse', '--show-toplevel']).stdout,
     currentBranch: _exec(['rev-parse', '--abbrev-ref', 'HEAD']).stdout,
     mainBranchName:

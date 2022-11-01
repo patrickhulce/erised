@@ -17,10 +17,14 @@ export const DEFAULT_OPTIONS = {
     'packages/baz/e.js',
     'packages/baz/f.js',
   ],
-  modifiedFiles: ['packages/foo/a.js', 'packages/bar/c.js'],
   branchName: 'example_branch',
   mainBranchName: 'main',
-  commits: ['feat: add features to foo & bar\n\nhere are some details'],
+  commits: [
+    {
+      message: 'feat: add features to foo & bar\n\nhere are some details',
+      modifiedFiles: ['packages/foo/a.js', 'packages/bar/c.js'],
+    },
+  ],
 };
 
 export async function setupTestRepository(options: typeof DEFAULT_OPTIONS): Promise<TestState> {
@@ -35,6 +39,7 @@ export async function setupTestRepository(options: typeof DEFAULT_OPTIONS): Prom
   }
 
   const context: git.RepoContext = {
+    globalCommitCount: 0,
     gitRootDirectory: tmpDirPath,
     currentBranch: options.branchName,
     mainBranchName: options.mainBranchName,
@@ -45,26 +50,40 @@ export async function setupTestRepository(options: typeof DEFAULT_OPTIONS): Prom
   git.exec(['add', '-A'], {context});
   git.exec(['commit', '-m', 'feat: initial commit'], {context});
   git.exec(['branch', '-m', context.mainBranchName], {context});
-  console.log(git.exec(['status'], {context}));
 
   // Create a branch and add some commits to it.
   git.exec(['checkout', '-b', context.currentBranch], {context});
-  for (let i = 0; i < options.commits.length; i++) {
-    const commit = options.commits[i];
-
-    for (const file of options.modifiedFiles) {
-      const filePath = path.join(tmpDirPath, file);
-      await fs.writeFile(filePath, `content #${i}`);
-    }
-
-    console.log(tmpDirPath);
-    git.exec(['add', ...options.modifiedFiles], {context});
-    git.exec(['commit', '-m', commit], {context});
-  }
+  await _createCommits(options.commits, context);
 
   return {tmpDirectory: tmpDirPath, context: context};
 }
 
 export async function teardownTestRepository(state: TestState): Promise<void> {
-  // await fs.rm(state.tmpDirectory, {recursive: true, force: true});
+  await fs.rm(state.tmpDirectory, {recursive: true, force: true});
+}
+
+export async function addCommitsToTestRepository(
+  state: TestState,
+  commits: typeof DEFAULT_OPTIONS['commits'],
+): Promise<void> {
+  const {context} = state;
+
+  await _createCommits(commits, context);
+}
+
+async function _createCommits(
+  commits: {message: string; modifiedFiles: string[]}[],
+  context: git.RepoContext,
+) {
+  for (let i = 0; i < commits.length; i++) {
+    const commit = commits[i];
+
+    for (const file of commit.modifiedFiles) {
+      const filePath = path.join(context.gitRootDirectory, file);
+      await fs.writeFile(filePath, `content #${context.globalCommitCount}.${i}`);
+    }
+
+    git.exec(['add', ...commit.modifiedFiles], {context});
+    git.exec(['commit', '-m', commit.message], {context});
+  }
 }
