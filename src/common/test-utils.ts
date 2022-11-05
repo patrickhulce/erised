@@ -2,11 +2,19 @@ import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import * as git from './git';
+import * as express from 'express';
+import * as http from 'http';
+import bodyParser from 'body-parser';
 
 export interface TestState {
   tmpDirectory: string;
   tmpRemoteDirectory: string;
+
   context: git.RepoContext;
+
+  mockPullRequests: Array<unknown>;
+  mockGitHubServer: http.Server;
+  mockGitHubUrl: string;
 }
 
 export const DEFAULT_OPTIONS = {
@@ -62,12 +70,35 @@ export async function setupTestRepository(options: typeof DEFAULT_OPTIONS): Prom
   git.exec(['init'], {context: {...context, gitRootDirectory: tmpRemoteDirectory}});
   git.exec(['remote', 'add', 'origin', `${tmpRemoteDirectory}/.git`], {context});
 
-  return {tmpDirectory: tmpDirPath, tmpRemoteDirectory, context: context};
+  const hithubApp = express.default();
+  hithubApp.use(bodyParser.json());
+  const mockPullRequests: unknown[] = [];
+  hithubApp.post('/repos/patrickhulce/erised/pulls', (req, res) => {
+    mockPullRequests.push(req.body);
+    res.sendStatus(201);
+  });
+  const mockGitHubServer = http.createServer(hithubApp);
+  await new Promise<void>(resolve => mockGitHubServer.listen(0, resolve));
+  const address = mockGitHubServer.address() as import('net').AddressInfo;
+  const mockGitHubUrl = `http://localhost:${address.port}`;
+
+  return {
+    tmpDirectory: tmpDirPath,
+    tmpRemoteDirectory,
+    context,
+
+    mockPullRequests,
+    mockGitHubServer,
+    mockGitHubUrl,
+  };
 }
 
 export async function teardownTestRepository(state: TestState): Promise<void> {
   await fs.rm(state.tmpDirectory, {recursive: true, force: true});
   await fs.rm(state.tmpRemoteDirectory, {recursive: true, force: true});
+
+  state.mockGitHubServer.closeAllConnections();
+  await new Promise<void>(resolve => state.mockGitHubServer.close(() => resolve()));
 }
 
 export async function addCommitsToTestRepository(

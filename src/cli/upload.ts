@@ -15,10 +15,15 @@ async function createPR(options: {
   context: git.RepoContext;
 }) {
   const {githubApiBase, githubToken, context} = options;
+  const {githubRepo} = context;
 
-  await fetch(`${githubApiBase}/repos/${context.githubRepo.owner}/${context.githubRepo.name}`, {
+  await fetch(`${githubApiBase}/repos/${githubRepo.owner}/${githubRepo.name}/pulls`, {
     method: 'POST',
-    headers: {accept: 'application/vnd.github+json', authorization: `Bearer ${githubToken}`},
+    headers: {
+      accept: 'application/vnd.github+json',
+      'content-type': 'application/json',
+      authorization: `Bearer ${githubToken}`,
+    },
     body: JSON.stringify({
       title: options.title,
       body: options.body,
@@ -44,7 +49,8 @@ export async function executeUpload(options: {
 
   // Determine the branch name and commit message to use (first distinct commit).
   const commitMessage = git.readFirstUniqueCommitMessage({context});
-  const [title, body] = commitMessage.split('\n', 2);
+  const [title, ...bodyLines] = commitMessage.split('\n');
+  const body = bodyLines.join('\n');
 
   // TODO: Assert that those branches are up-to-date with the current branch.
 
