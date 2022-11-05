@@ -3,7 +3,9 @@
 ## Usage
 
 ```bash
+# Setup Erised.
 npm install -g @patrickhulce/erised
+export ERISED_GITHUB_TOKEN=<get a personal token from GitHub>
 
 # Start a commit affecting multiple subprojects in a monorepo.
 touch apps/app-a/server.js
@@ -24,8 +26,9 @@ git add apps/app-b/server.js
 git commit -m 'oops a bug!'
 erised mirror
 
-# Check in on the status of PRs.
+# Check in on the status of PRs and update.
 erised status
+erised upload
 ```
 
 ## Development

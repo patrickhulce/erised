@@ -3,6 +3,7 @@ import {version} from '../../package.json';
 import createLogger from 'debug';
 import {executeMirror} from './mirror';
 import * as git from '../common/git';
+import {executeUpload} from './upload';
 
 export const log = createLogger('erised:cli:run');
 
@@ -26,8 +27,14 @@ async function main() {
   program
     .command('upload')
     .description('Uploads the branches to GitHub as PRs.')
-    .action(options => {
-      log('upload', options);
+    .option('--github-api-base <url>', 'the GitHub API URL to use', 'https://api.github.com')
+    .option('-t, --github-token <token>', 'the GitHub API token to use')
+    .action(async options => {
+      if (!options.githubToken) options.githubToken = process.env.ERISED_GITHUB_TOKEN;
+      log('executing upload with options', options);
+
+      const context = await git.getRepoContext();
+      await executeUpload({context, ...options});
     });
 
   program

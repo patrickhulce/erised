@@ -67,6 +67,7 @@ export async function setupTestRepository(options: typeof DEFAULT_OPTIONS): Prom
 
 export async function teardownTestRepository(state: TestState): Promise<void> {
   await fs.rm(state.tmpDirectory, {recursive: true, force: true});
+  await fs.rm(state.tmpRemoteDirectory, {recursive: true, force: true});
 }
 
 export async function addCommitsToTestRepository(
