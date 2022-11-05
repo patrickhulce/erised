@@ -43,3 +43,15 @@ export function determineBoundaries(
 
   return Array.from(boundariesByName.values()).sort((a, b) => a.boundary.localeCompare(b.boundary));
 }
+
+export function getBoundaryBranchName(boundary: string, context: {currentBranch: string}): string {
+  const cleanedBoundary = boundary.replace(/[^a-z0-9]+/g, '_');
+  return `${context.currentBranch}.erised.${cleanedBoundary}`;
+}
+
+export function filterBoundaryBranches(
+  allBranches: string[],
+  context: {currentBranch: string},
+): string[] {
+  return allBranches.filter(branch => branch.startsWith(`${context.currentBranch}.erised.`));
+}

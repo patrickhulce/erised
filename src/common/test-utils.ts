@@ -5,6 +5,7 @@ import * as git from './git';
 
 export interface TestState {
   tmpDirectory: string;
+  tmpRemoteDirectory: string;
   context: git.RepoContext;
 }
 
@@ -29,6 +30,7 @@ export const DEFAULT_OPTIONS = {
 
 export async function setupTestRepository(options: typeof DEFAULT_OPTIONS): Promise<TestState> {
   const tmpDirPath = await fs.mkdtemp(path.join(os.tmpdir(), 'erised-tests'));
+  const tmpRemoteDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'erised-tests'));
 
   for (const file of options.baseFiles) {
     const filePath = path.join(tmpDirPath, file);
@@ -41,6 +43,7 @@ export async function setupTestRepository(options: typeof DEFAULT_OPTIONS): Prom
   const context: git.RepoContext = {
     globalCommitCount: 0,
     gitRootDirectory: tmpDirPath,
+    githubRepo: {remoteName: 'origin', name: 'erised', owner: 'patrickhulce'},
     currentBranch: options.branchName,
     mainBranchName: options.mainBranchName,
   };
@@ -55,7 +58,11 @@ export async function setupTestRepository(options: typeof DEFAULT_OPTIONS): Prom
   git.exec(['checkout', '-b', context.currentBranch], {context});
   await _createCommits(options.commits, context);
 
-  return {tmpDirectory: tmpDirPath, context: context};
+  // Setup fake remote.
+  git.exec(['init'], {context: {...context, gitRootDirectory: tmpRemoteDirectory}});
+  git.exec(['remote', 'add', 'origin', `${tmpRemoteDirectory}/.git`], {context});
+
+  return {tmpDirectory: tmpDirPath, tmpRemoteDirectory, context: context};
 }
 
 export async function teardownTestRepository(state: TestState): Promise<void> {

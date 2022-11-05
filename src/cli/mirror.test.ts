@@ -11,12 +11,6 @@ import * as git from '../common/git';
 describe('erised mirror', () => {
   let state: TestState;
 
-  const getBranches = () =>
-    git
-      .exec(['branch'], state)
-      .stdout.split('\n')
-      .map(line => line.trim());
-
   afterEach(async () => {
     await teardownTestRepository(state);
   });
@@ -35,7 +29,7 @@ describe('erised mirror', () => {
 
     await executeMirror(state);
 
-    const branches = getBranches();
+    const branches = git.readBranches(state);
     expect(branches).toContain('example_branch.erised.packages_foo');
     expect(branches).toContain('example_branch.erised.packages_bar');
 
@@ -72,7 +66,7 @@ describe('erised mirror', () => {
 
     await executeMirror(state);
 
-    const branches = getBranches();
+    const branches = git.readBranches(state);
     expect(branches).toContain('example_branch.erised.packages_foo');
     expect(branches).toContain('example_branch.erised.packages_bar');
 
@@ -115,7 +109,7 @@ describe('erised mirror', () => {
 
     await executeMirror(state);
 
-    const branches = getBranches();
+    const branches = git.readBranches(state);
     expect(branches).toContain('example_branch.erised.packages_foo');
     expect(branches).toContain('example_branch.erised.packages_bar');
 

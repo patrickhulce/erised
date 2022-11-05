@@ -9,6 +9,7 @@ export interface RepoContext {
   currentBranch: string;
   mainBranchName: string;
   globalCommitCount: number;
+  githubRepo: {name: string; owner: string; remoteName: string};
 }
 
 function _exec(args: string[], options?: {fatal?: boolean; gitWorkTree?: string}) {
@@ -33,17 +34,36 @@ function _exec(args: string[], options?: {fatal?: boolean; gitWorkTree?: string}
 }
 
 export function exec(args: string[], options: {context: RepoContext; fatal?: boolean}) {
+  log(`executing "git ${args.map(s => s.slice(0, 40)).join(' ')}"`);
   if (args[0] === 'commit') options.context.globalCommitCount++;
   return _exec(args, {...options, gitWorkTree: options.context.gitRootDirectory});
 }
 
+export function readBranches(options: {context: RepoContext}) {
+  return exec(['branch'], options)
+    .stdout.split('\n')
+    .map(line => line.trim());
+}
+
 export async function getRepoContext(): Promise<RepoContext> {
+  const remoteMatchRegex = /github\.com[:\/](\w+)\/(\w+)\.git/;
+  const remotes = _exec(['remote', '-v']).stdout;
+  const githubRemoteLine = remotes.split('\n').find(line => line.match(remoteMatchRegex));
+  if (!githubRemoteLine) throw new Error(`GitHub remote not found in repository:\n${remotes}`);
+
+  const [remoteName, connection] = githubRemoteLine.split(/\s+/);
+  const [, repoOwner, repoName] = connection.match(remoteMatchRegex) || [];
+  if (!repoOwner || !repoName) {
+    throw new Error(`Unable to extract repository owner from "${connection}"`);
+  }
+
   return {
     globalCommitCount: 0,
     gitRootDirectory: _exec(['rev-parse', '--show-toplevel']).stdout,
     currentBranch: _exec(['rev-parse', '--abbrev-ref', 'HEAD']).stdout,
     mainBranchName:
       _exec(['rev-parse', '--verify', 'main'], {fatal: false}).code === 0 ? 'main' : 'master',
+    githubRepo: {remoteName, owner: repoOwner, name: repoName},
   };
 }
 

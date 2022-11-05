@@ -1,6 +1,6 @@
 import * as git from '../common/git';
 import {readPreferences} from '../common/preferences';
-import {determineBoundaries} from '../common/boundary';
+import {determineBoundaries, getBoundaryBranchName} from '../common/boundary';
 import {createLogger} from '../common/utils';
 
 export const log = createLogger('erised:cli:mirror');
@@ -29,8 +29,7 @@ export async function executeMirror(options: {context: git.RepoContext}) {
     log('checking out current branch');
     git.exec(['checkout', '-f', context.currentBranch], {context});
 
-    const cleanedBoundary = changeset.boundary.replace(/[^a-z0-9]+/g, '_');
-    const branchName = `${context.currentBranch}.erised.${cleanedBoundary}`;
+    const branchName = getBoundaryBranchName(changeset.boundary, context);
     log('checking out new branch', branchName);
     git.exec(['branch', '-D', branchName], {fatal: false, context});
     git.exec(['checkout', '-b', branchName], {context});
