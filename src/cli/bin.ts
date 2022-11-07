@@ -33,8 +33,12 @@ async function main() {
       if (!options.githubToken) options.githubToken = process.env.ERISED_GITHUB_TOKEN;
       log('executing upload with options', options);
 
-      const context = await git.getRepoContext();
-      await executeUpload({context, ...options});
+      const context = {
+        ...options,
+        ...(await git.getRepoContext()),
+      };
+
+      await executeUpload({context});
     });
 
   program

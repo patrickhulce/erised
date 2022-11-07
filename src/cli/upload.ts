@@ -1,55 +1,11 @@
 import {filterBoundaryBranches} from '../common/boundary';
 import * as git from '../common/git';
 import {createLogger} from '../common/utils';
-import fetch from 'node-fetch';
+import {createPR, getPRs, GitHubContext} from '../common/github';
 
 export const log = createLogger('erised:cli:upload');
 
-async function createPR(options: {
-  githubApiBase: string;
-  githubToken: string;
-
-  title: string;
-  body: string;
-  branch: string;
-
-  context: git.RepoContext;
-}) {
-  const {githubApiBase, githubToken, context} = options;
-  const {githubRepo} = context;
-
-  log(`creating pull request`);
-
-  const response = await fetch(
-    `${githubApiBase}/repos/${githubRepo.owner}/${githubRepo.name}/pulls`,
-    {
-      method: 'POST',
-      headers: {
-        accept: 'application/vnd.github+json',
-        'content-type': 'application/json',
-        authorization: `Bearer ${githubToken}`,
-      },
-      body: JSON.stringify({
-        title: options.title,
-        body: options.body,
-        head: options.branch,
-        base: context.mainBranchName,
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to create pull request for branch ${options.branch}:\n${await response.text()}`,
-    );
-  }
-}
-
-export async function executeUpload(options: {
-  context: git.RepoContext;
-  githubApiBase: string;
-  githubToken: string;
-}) {
+export async function executeUpload(options: {context: git.RepoContext & GitHubContext}) {
   const {context} = options;
 
   // Check to make sure tree is clean (no pending changes).
@@ -72,10 +28,13 @@ export async function executeUpload(options: {
     git.exec(['checkout', '-f', branch], {context});
     git.exec(['push', '-f', '-u', context.githubRepo.remoteName, branch], {context});
 
-    // TODO: check if PR already exists.
-
-    // Create the PR.
-    await createPR({...options, branch, title, body});
+    const existingPRs = await getPRs({branch, context});
+    const existingPR = existingPRs.find(pr => pr.state === 'open');
+    if (existingPR) {
+      log(`PR already open for ${branch}, ${existingPR.html_url}`);
+    } else {
+      await createPR({...options, branch, title, body});
+    }
   }
 
   // Return to starting branch.

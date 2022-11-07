@@ -5,6 +5,10 @@ import * as git from './git';
 import * as express from 'express';
 import * as http from 'http';
 import bodyParser from 'body-parser';
+import {createLogger} from './utils';
+import {PullRequest} from './github';
+
+const log = createLogger('erised:common:test-utils');
 
 export interface TestState {
   tmpDirectory: string;
@@ -28,6 +32,7 @@ export const DEFAULT_OPTIONS = {
   ],
   branchName: 'example_branch',
   mainBranchName: 'main',
+  pullRequests: [] as PullRequest[],
   commits: [
     {
       message: 'feat: add features to foo & bar\n\nhere are some details',
@@ -73,7 +78,12 @@ export async function setupTestRepository(options: typeof DEFAULT_OPTIONS): Prom
   const hithubApp = express.default();
   hithubApp.use(bodyParser.json());
   const mockPullRequests: unknown[] = [];
-  hithubApp.post('/repos/patrickhulce/erised/pulls', (req, res) => {
+  hithubApp.get('/repos/:owner/:repo/pulls', (req, res) => {
+    log(`request received to list ${req.query.head} pull requests`);
+    res.send(options.pullRequests.filter(pr => pr.head.ref === req.query.head));
+  });
+  hithubApp.post('/repos/:owner/:repo/pulls', (req, res) => {
+    log(`request received to create ${req.params.owner}/${req.params.repo} pull request`);
     mockPullRequests.push(req.body);
     res.sendStatus(201);
   });

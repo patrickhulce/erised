@@ -1,3 +1,4 @@
+import {createMockPullRequest} from '../common/github';
 import {
   DEFAULT_OPTIONS,
   setupTestRepository,
@@ -24,15 +25,25 @@ describe('erised upload', () => {
           modifiedFiles: ['packages/foo/example.js', 'packages/bar/example.js'],
         },
       ],
+      pullRequests: [
+        {
+          ...createMockPullRequest(),
+          head: {ref: 'example_branch.erised.packages_bar', sha: '123456'},
+        },
+      ],
     });
 
     await executeMirror(state);
-    await executeUpload({...state, githubApiBase: state.mockGitHubUrl, githubToken: 'TOKEN'});
+    await executeUpload({
+      ...state,
+      context: {
+        ...state.context,
+        githubApiBase: state.mockGitHubUrl,
+        githubToken: 'TOKEN',
+      },
+    });
 
-    expect(state.mockPullRequests).toMatchObject([
-      {head: 'example_branch.erised.packages_bar'},
-      {head: 'example_branch.erised.packages_foo'},
-    ]);
+    expect(state.mockPullRequests).toMatchObject([{head: 'example_branch.erised.packages_foo'}]);
 
     expect(state.mockPullRequests[0]).toMatchObject({
       title: 'feat: commit',
