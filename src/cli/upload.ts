@@ -1,6 +1,7 @@
 import {filterBoundaryBranches} from '../common/boundary';
 import * as git from '../common/git';
 import {createLogger} from '../common/utils';
+import fetch from 'node-fetch';
 
 export const log = createLogger('erised:cli:upload');
 
