@@ -57,12 +57,17 @@ export async function getRepoContext(): Promise<RepoContext> {
     throw new Error(`Unable to extract repository owner from "${connection}"`);
   }
 
+  const mainBranchName =
+    process.env.ERISED_MAIN_BRANCH ??
+    _exec(['rev-parse', '--verify', 'main'], {fatal: false}).code === 0
+      ? 'main'
+      : 'master';
+
   return {
     globalCommitCount: 0,
     gitRootDirectory: _exec(['rev-parse', '--show-toplevel']).stdout,
     currentBranch: _exec(['rev-parse', '--abbrev-ref', 'HEAD']).stdout,
-    mainBranchName:
-      _exec(['rev-parse', '--verify', 'main'], {fatal: false}).code === 0 ? 'main' : 'master',
+    mainBranchName,
     githubRepo: {remoteName, owner: repoOwner, name: repoName},
   };
 }
