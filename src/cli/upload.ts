@@ -18,20 +18,31 @@ async function createPR(options: {
   const {githubApiBase, githubToken, context} = options;
   const {githubRepo} = context;
 
-  await fetch(`${githubApiBase}/repos/${githubRepo.owner}/${githubRepo.name}/pulls`, {
-    method: 'POST',
-    headers: {
-      accept: 'application/vnd.github+json',
-      'content-type': 'application/json',
-      authorization: `Bearer ${githubToken}`,
+  log(`creating pull request`);
+
+  const response = await fetch(
+    `${githubApiBase}/repos/${githubRepo.owner}/${githubRepo.name}/pulls`,
+    {
+      method: 'POST',
+      headers: {
+        accept: 'application/vnd.github+json',
+        'content-type': 'application/json',
+        authorization: `Bearer ${githubToken}`,
+      },
+      body: JSON.stringify({
+        title: options.title,
+        body: options.body,
+        head: options.branch,
+        base: context.mainBranchName,
+      }),
     },
-    body: JSON.stringify({
-      title: options.title,
-      body: options.body,
-      head: options.branch,
-      base: context.mainBranchName,
-    }),
-  });
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to create pull request for branch ${options.branch}:\n${await response.text()}`,
+    );
+  }
 }
 
 export async function executeUpload(options: {
