@@ -1,5 +1,7 @@
 # erised
 
+Command-line utility to mirror a single, local branch containing changes to many different projects into many separate commits / branches that can be landed independently. Useful for large monorepos with strict CI isolation requirements.
+
 ## Usage
 
 ```bash
@@ -43,11 +45,9 @@ npm start -- mirror # Run erised with your commands.
 
 ## TODO
 
-- upload PRs
-- status checks
-  - status for local branch
-  - status for remote push
-  - status for PR approval
+- cleanup command
   - delete/cleanup branches
+- merge command
+  - automatically merge the PRs that can be merged
 - idempotent mirror (create a staging branch and only rename if there's a diff)
 - `--all` flag to handle all erised-managed branches at once
