@@ -15,7 +15,7 @@ interface BranchStatus {
 export const log = createLogger('erised:cli:status');
 
 function getUpdatedTimeOfRef(ref: string, context: git.RepoContext): Date {
-  const {code, stdout: lastUpdatedAtStr} = git.exec(['log', '-1', '--format=%cd'], {
+  const {code, stdout: lastUpdatedAtStr} = git.exec(['log', '-1', '--format=%cd', ref], {
     context,
     fatal: false,
   });
@@ -81,7 +81,7 @@ export async function executeStatus(options: {context: git.RepoContext & GitHubC
     // Determine whether it's approved / requested changes.
     const openPullRequest = pullRequestsForBranch.find(pr => pr.state === 'open');
     if (!status.isMerged && openPullRequest) {
-      log(`found open PR for`, branch, 'at', openPullRequest.html_url, openPullRequest.head);
+      log(`found open PR for`, branch, 'at', openPullRequest.html_url);
       const reviews = await getPRReviews({pullRequestNumber: openPullRequest.number, context});
       const upToDateReviews = reviews.filter(
         review => new Date(review.submitted_at).getTime() >= remoteUpdatedAt.getTime(),
