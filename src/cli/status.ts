@@ -72,7 +72,7 @@ export async function executeStatus(options: {context: git.RepoContext & GitHubC
     const pullRequestsForBranch = await getPRs({branch, context});
     const mergedPullRequest = pullRequestsForBranch.find(pr => pr.merged_at);
     if (mergedPullRequest) {
-      log(`found merged PR for`, branch, 'at', mergedPullRequest.html_url, mergedPullRequest.head);
+      log(`found merged PR for`, branch, 'at', mergedPullRequest.html_url);
       status.isMerged = true;
       status.isApproved = true;
       status.pullRequestUrl = mergedPullRequest.html_url;
