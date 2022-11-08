@@ -29,27 +29,27 @@ export interface PullRequestReview {
 }
 
 async function _request<T = void>(options: {
-  urlPathname: string;
+  url: string;
   method: 'GET' | 'POST' | 'PATCH';
   body?: unknown;
   context: GitHubContext;
 }): Promise<T> {
-  log(`requesting ${options.urlPathname}`);
+  log(`requesting ${options.url}`);
 
-  const postHeaders = {'content-type': 'application/json'};
+  const withBodyHeaders = {'content-type': 'application/json'};
 
-  const response = await fetch(`${options.context.githubApiBase}${options.urlPathname}`, {
+  const response = await fetch(`${options.context.githubApiBase}${options.url}`, {
     method: options.method,
     headers: {
       accept: 'application/vnd.github+json',
       authorization: `Bearer ${options.context.githubToken}`,
-      ...(options.method === 'GET' ? {} : postHeaders),
+      ...(options.body ? withBodyHeaders : {}),
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to request ${options.urlPathname}:\n${await response.text()}`);
+    throw new Error(`Failed to request ${options.url}:\n${await response.text()}`);
   }
 
   if (response.headers.get('content-type')?.includes('json')) return response.json();
@@ -68,7 +68,7 @@ export async function createPR(options: {
   const {githubRepo} = context;
 
   await _request({
-    urlPathname: `/repos/${githubRepo.owner}/${githubRepo.name}/pulls`,
+    url: `/repos/${githubRepo.owner}/${githubRepo.name}/pulls`,
     method: 'POST',
     body: {
       title: options.title,
@@ -89,14 +89,17 @@ export async function getPRs(options: {
   const {githubRepo} = context;
 
   const queryParams = new URLSearchParams();
-  if (options.branch) queryParams.set('head', options.branch);
+  queryParams.set('state', 'all');
   queryParams.set('base', context.mainBranchName);
+  if (options.branch) queryParams.set('head', `${githubRepo.owner}:${options.branch}`);
 
-  return _request<PullRequest[]>({
-    urlPathname: `/repos/${githubRepo.owner}/${githubRepo.name}/pulls?${queryParams}`,
+  const response = await _request<PullRequest[]>({
+    url: `/repos/${githubRepo.owner}/${githubRepo.name}/pulls?${queryParams}`,
     method: 'GET',
     context,
   });
+
+  return response.filter(pr => !options.branch || pr.head.ref === options.branch);
 }
 
 export async function closePR(options: {
@@ -107,7 +110,7 @@ export async function closePR(options: {
   const {owner, name} = context.githubRepo;
 
   return _request<void>({
-    urlPathname: `/repos/${owner}/${name}/pulls/${pullRequestNumber}`,
+    url: `/repos/${owner}/${name}/pulls/${pullRequestNumber}`,
     method: 'PATCH',
     body: {state: 'closed'},
     context,
@@ -122,7 +125,7 @@ export async function getPRReviews(options: {
   const {owner, name} = context.githubRepo;
 
   return _request<PullRequestReview[]>({
-    urlPathname: `/repos/${owner}/${name}/pulls/${pullRequestNumber}/reviews`,
+    url: `/repos/${owner}/${name}/pulls/${pullRequestNumber}/reviews`,
     method: 'GET',
     context,
   });

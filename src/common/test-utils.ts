@@ -75,19 +75,19 @@ export async function setupTestRepository(options: typeof DEFAULT_OPTIONS): Prom
   git.exec(['init'], {context: {...context, gitRootDirectory: tmpRemoteDirectory}});
   git.exec(['remote', 'add', 'origin', `${tmpRemoteDirectory}/.git`], {context});
 
-  const hithubApp = express.default();
-  hithubApp.use(bodyParser.json());
+  const githubApp = express.default();
+  githubApp.use(bodyParser.json());
   const mockPullRequests: unknown[] = [];
-  hithubApp.get('/repos/:owner/:repo/pulls', (req, res) => {
+  githubApp.get('/repos/:owner/:repo/pulls', (req, res) => {
     log(`request received to list ${req.query.head} pull requests`);
-    res.send(options.pullRequests.filter(pr => pr.head.ref === req.query.head));
+    res.send(options.pullRequests.filter(pr => String(req.query.head).includes(pr.head.ref)));
   });
-  hithubApp.post('/repos/:owner/:repo/pulls', (req, res) => {
+  githubApp.post('/repos/:owner/:repo/pulls', (req, res) => {
     log(`request received to create ${req.params.owner}/${req.params.repo} pull request`);
     mockPullRequests.push(req.body);
     res.sendStatus(201);
   });
-  const mockGitHubServer = http.createServer(hithubApp);
+  const mockGitHubServer = http.createServer(githubApp);
   await new Promise<void>(resolve => mockGitHubServer.listen(0, resolve));
   const address = mockGitHubServer.address() as import('net').AddressInfo;
   const mockGitHubUrl = `http://localhost:${address.port}`;
