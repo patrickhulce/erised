@@ -17,6 +17,8 @@ async function main() {
   }
 
   for (const pr of e2ePRs) {
+    if (pr.state === 'closed') continue;
+
     console.log(`Closing pull request #${pr.number} (${pr.html_url})`);
     await github.closePR({pullRequestNumber: pr.number, context});
   }
