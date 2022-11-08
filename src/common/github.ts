@@ -30,7 +30,7 @@ export interface PullRequestReview {
 
 async function _request<T = void>(options: {
   urlPathname: string;
-  method: 'GET' | 'POST';
+  method: 'GET' | 'POST' | 'PATCH';
   body?: unknown;
   context: GitHubContext;
 }): Promise<T> {
@@ -81,7 +81,7 @@ export async function createPR(options: {
 }
 
 export async function getPRs(options: {
-  branch: string;
+  branch?: string;
 
   context: git.RepoContext & GitHubContext;
 }): Promise<PullRequest[]> {
@@ -89,12 +89,27 @@ export async function getPRs(options: {
   const {githubRepo} = context;
 
   const queryParams = new URLSearchParams();
-  queryParams.set('head', options.branch);
+  if (options.branch) queryParams.set('head', options.branch);
   queryParams.set('base', context.mainBranchName);
 
   return _request<PullRequest[]>({
     urlPathname: `/repos/${githubRepo.owner}/${githubRepo.name}/pulls?${queryParams}`,
     method: 'GET',
+    context,
+  });
+}
+
+export async function closePR(options: {
+  pullRequestNumber: number;
+  context: git.RepoContext & GitHubContext;
+}): Promise<void> {
+  const {pullRequestNumber, context} = options;
+  const {owner, name} = context.githubRepo;
+
+  return _request<void>({
+    urlPathname: `/repos/${owner}/${name}/pulls/${pullRequestNumber}`,
+    method: 'PATCH',
+    body: {state: 'closed'},
     context,
   });
 }

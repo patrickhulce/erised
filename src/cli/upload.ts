@@ -29,9 +29,9 @@ export async function executeUpload(options: {context: git.RepoContext & GitHubC
     git.exec(['push', '-f', '-u', context.githubRepo.remoteName, branch], {context});
 
     const existingPRs = await getPRs({branch, context});
-    const existingPR = existingPRs.find(pr => pr.state === 'open');
+    const existingPR = existingPRs.find(pr => pr.state === 'open' || pr.merged_at);
     if (existingPR) {
-      log(`PR already open for ${branch}, ${existingPR.html_url}`);
+      log(`PR already opened for ${branch}, ${existingPR.html_url}`);
     } else {
       await createPR({...options, branch, title, body});
     }
