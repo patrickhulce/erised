@@ -1,6 +1,6 @@
 {
   "name": "@patrickhulce/erised",
-  "version": "0.0.0",
+  "version": "0.0.0-development",
   "description": "Mirror a branch to many branches for GitHub PR isolation.",
   "bin": {
     "erised": "./dist/src/cli/bin.js"
@@ -12,7 +12,8 @@
     "test": "eslint 'src/**/*.ts' && npm run test:unit",
     "test:unit": "jest --forceExit",
     "test:watch": "jest --watch",
-    "test:e2e": "bash scripts/e2e/bin.sh"
+    "test:e2e": "bash scripts/e2e/bin.sh",
+    "semantic-release": "semantic-release"
   },
   "keywords": [
     "erised",
@@ -37,10 +38,15 @@
     "node-fetch": "^2.6.7",
     "prettier": "^2.7.1",
     "ts-jest": "^29.0.3",
-    "typescript": "^4.8.4"
+    "typescript": "^4.8.4",
+    "semantic-release": "^19.0.5"
   },
   "dependencies": {
     "commander": "^9.4.1",
     "debug": "^4.3.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/patrickhulce/erised.git"
   }
 }
