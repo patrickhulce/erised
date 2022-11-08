@@ -4,6 +4,7 @@ import createLogger from 'debug';
 import {executeMirror} from './mirror';
 import * as git from '../common/git';
 import {executeUpload} from './upload';
+import {executeStatus} from './status';
 
 export const log = createLogger('erised:cli:run');
 
@@ -44,8 +45,18 @@ async function main() {
   program
     .command('status')
     .description('Lists the status of all local branches and PRs.')
-    .action(options => {
-      log('status', options);
+    .option('--github-api-base <url>', 'the GitHub API URL to use', 'https://api.github.com')
+    .option('-t, --github-token <token>', 'the GitHub API token to use')
+    .action(async options => {
+      if (!options.githubToken) options.githubToken = process.env.ERISED_GITHUB_TOKEN;
+      log('executing status with options', options);
+
+      const context = {
+        ...options,
+        ...(await git.getRepoContext()),
+      };
+
+      await executeStatus({context});
     });
 
   program

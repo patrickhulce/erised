@@ -70,9 +70,12 @@ export async function getRepoContext(): Promise<RepoContext> {
   };
 }
 
+export function isCleanWorkingTree(options: {context: RepoContext}) {
+  return exec(['status', '--porcelain'], options).stdout.length === 0;
+}
+
 export function assertCleanWorkingTree(options: {context: RepoContext}) {
-  const result = exec(['status', '--porcelain'], options);
-  if (result.stdout.length) {
+  if (!isCleanWorkingTree(options)) {
     throw new Error(
       `Git detects untracked changes, please discard or commit before proceeding.\n${result.stdout}`,
     );

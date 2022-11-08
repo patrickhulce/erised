@@ -14,12 +14,18 @@ export interface PullRequest {
   number: number;
   title: string;
   updated_at: string;
+  merged_at?: string;
   created_at: string;
   state: 'open' | 'closed';
   head: {
     sha: string;
     ref: string;
   };
+}
+
+export interface PullRequestReview {
+  state: 'APPROVED' | 'CHANGES_REQUESTED';
+  submitted_at: string;
 }
 
 async function _request<T = void>(options: {
@@ -88,6 +94,20 @@ export async function getPRs(options: {
 
   return _request<PullRequest[]>({
     urlPathname: `/repos/${githubRepo.owner}/${githubRepo.name}/pulls?${queryParams}`,
+    method: 'GET',
+    context,
+  });
+}
+
+export async function getPRReviews(options: {
+  pullRequestNumber: number;
+  context: git.RepoContext & GitHubContext;
+}): Promise<PullRequestReview[]> {
+  const {pullRequestNumber, context} = options;
+  const {owner, name} = context.githubRepo;
+
+  return _request<PullRequestReview[]>({
+    urlPathname: `/repos/${owner}/${name}/pulls/${pullRequestNumber}/reviews`,
     method: 'GET',
     context,
   });
