@@ -41,6 +41,11 @@ export const DEFAULT_OPTIONS = {
   ],
 };
 
+function setupGitAuthor(options: {context: git.RepoContext}) {
+  git.exec(['config', 'user.email', 'erised@example.com'], options);
+  git.exec(['config', 'user.name', 'Erised CI'], options);
+}
+
 export async function setupTestRepository(options: typeof DEFAULT_OPTIONS): Promise<TestState> {
   const tmpDirPath = await fs.mkdtemp(path.join(os.tmpdir(), 'erised-tests'));
   const tmpRemoteDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'erised-tests'));
@@ -63,6 +68,7 @@ export async function setupTestRepository(options: typeof DEFAULT_OPTIONS): Prom
 
   // Setup the repo with initial files.
   git.exec(['init'], {context});
+  if (process.env.CI) setupGitAuthor({context});
   git.exec(['add', '-A'], {context});
   git.exec(['commit', '-m', 'feat: initial commit'], {context});
   git.exec(['branch', '-m', context.mainBranchName], {context});
@@ -72,7 +78,9 @@ export async function setupTestRepository(options: typeof DEFAULT_OPTIONS): Prom
   await _createCommits(options.commits, context);
 
   // Setup fake remote.
-  git.exec(['init'], {context: {...context, gitRootDirectory: tmpRemoteDirectory}});
+  const remoteContext = {...context, gitRootDirectory: tmpRemoteDirectory};
+  git.exec(['init'], {context: remoteContext});
+  if (process.env.CI) setupGitAuthor({context: remoteContext});
   git.exec(['remote', 'add', 'origin', `${tmpRemoteDirectory}/.git`], {context});
 
   const githubApp = express.default();
