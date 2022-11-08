@@ -57,6 +57,7 @@ export async function executeStatus(options: {context: git.RepoContext & GitHubC
 
     // Determine whether it's up-to-date with local version.
     const branchUpdatedAt = getUpdatedTimeOfRef(branch, context);
+    log(`branch updated at`, branchUpdatedAt, 'vs', lastUpdatedAt);
     status.isLocalUpToDate = branchUpdatedAt.getTime() >= lastUpdatedAt.getTime();
 
     // Determine whether it's up-to-date with remote version.
@@ -64,21 +65,24 @@ export async function executeStatus(options: {context: git.RepoContext & GitHubC
       `${context.githubRepo.remoteName}/${branch}`,
       context,
     );
+    log(`remote updated at`, remoteUpdatedAt, 'vs', branchUpdatedAt);
     status.isRemoteUpToDate = remoteUpdatedAt.getTime() >= branchUpdatedAt.getTime();
 
     // Determine whether it's been merged already.
     const pullRequestsForBranch = await getPRs({branch, context});
     const mergedPullRequest = pullRequestsForBranch.find(pr => pr.merged_at);
     if (mergedPullRequest) {
+      log(`found merged PR for`, branch, 'at', mergedPullRequest.html_url, mergedPullRequest.head);
       status.isMerged = true;
       status.isApproved = true;
       status.pullRequestUrl = mergedPullRequest.html_url;
     }
 
     // Determine whether it's approved / requested changes.
-    const unmergedPullRequest = pullRequestsForBranch.find(pr => pr.state === 'open');
-    if (!status.isMerged && unmergedPullRequest) {
-      const reviews = await getPRReviews({pullRequestNumber: unmergedPullRequest.number, context});
+    const openPullRequest = pullRequestsForBranch.find(pr => pr.state === 'open');
+    if (!status.isMerged && openPullRequest) {
+      log(`found open PR for`, branch, 'at', openPullRequest.html_url, openPullRequest.head);
+      const reviews = await getPRReviews({pullRequestNumber: openPullRequest.number, context});
       const upToDateReviews = reviews.filter(
         review => new Date(review.submitted_at).getTime() >= remoteUpdatedAt.getTime(),
       );
@@ -88,16 +92,17 @@ export async function executeStatus(options: {context: git.RepoContext & GitHubC
       );
 
       status.isApproved = hasOneApproving && hasNoChangeRequests;
-      status.pullRequestUrl = unmergedPullRequest.html_url;
+      status.pullRequestUrl = openPullRequest.html_url;
     }
   }
 
-  process.stdout.write(`💻 | 🌐 | 🧐 -- URL\n`);
+  process.stdout.write(`💻 | 🌐 | 🧐 / URL\n`);
+  process.stdout.write(`-- | -- | --------\n`);
   for (const [branch, status] of statusByBranch) {
     const localStatus = status.isLocalUpToDate ? '✅' : '⛔';
     const remoteStatus = status.isRemoteUpToDate ? '✅' : '⛔';
     const reviewStatus = status.isMerged ? '⤴️' : status.isApproved ? '✅' : '⛔';
-    const line = `${localStatus} | ${remoteStatus} | ${reviewStatus} -- ${branch.replace(
+    const line = `${localStatus} | ${remoteStatus} | ${reviewStatus} / ${branch.replace(
       /.*\.erised\./,
       '',
     )} (${status.pullRequestUrl})`;

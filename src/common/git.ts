@@ -76,9 +76,7 @@ export function isCleanWorkingTree(options: {context: RepoContext}) {
 
 export function assertCleanWorkingTree(options: {context: RepoContext}) {
   if (!isCleanWorkingTree(options)) {
-    throw new Error(
-      `Git detects untracked changes, please discard or commit before proceeding.\n${result.stdout}`,
-    );
+    throw new Error(`Git detects untracked changes, please discard or commit before proceeding.`);
   }
 }
 
