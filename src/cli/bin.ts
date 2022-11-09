@@ -5,6 +5,7 @@ import {executeMirror} from './mirror';
 import * as git from '../common/git';
 import {executeUpload} from './upload';
 import {executeStatus} from './status';
+import chalk from 'chalk';
 
 export const log = createLogger('erised:cli:run');
 
@@ -68,7 +69,7 @@ async function main() {
 
   await program.parseAsync(process.argv);
 
-  process.stdout.write(`Done!\n`);
+  process.stdout.write(`\n${chalk.bold('Done!')} 🎉\n`);
 }
 
 main().catch(err => {
