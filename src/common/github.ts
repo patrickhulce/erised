@@ -67,7 +67,7 @@ export async function createPR(options: {
   const {context} = options;
   const {githubRepo} = context;
 
-  await _request({
+  return _request<PullRequest>({
     url: `/repos/${githubRepo.owner}/${githubRepo.name}/pulls`,
     method: 'POST',
     body: {
