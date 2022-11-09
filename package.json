@@ -46,6 +46,9 @@
     "commander": "^9.4.1",
     "debug": "^4.3.4"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/patrickhulce/erised.git"
