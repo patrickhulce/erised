@@ -9,7 +9,7 @@
     "start": "node ./dist/src/cli/bin.js",
     "build": "tsc",
     "build:watch": "tsc -w",
-    "test": "eslint 'src/**/*.ts' && npm run test:unit",
+    "test": "npm run build && eslint 'src/**/*.ts' && npm run test:unit",
     "test:unit": "jest --forceExit",
     "test:watch": "jest --watch",
     "test:e2e": "bash scripts/e2e/bin.sh",
